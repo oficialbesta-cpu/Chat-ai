@@ -1,0 +1,166 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<title>Minha IA</title>
+<style>
+    body {
+        font-family: Arial;
+        background: #f0f0f0;
+        margin: 0;
+        padding: 20px;
+    }
+
+    #chatBox {
+        width: 100%;
+        height: 420px;
+        background: white;
+        border-radius: 8px;
+        padding: 10px;
+        overflow-y: auto;
+        border: 1px solid #ccc;
+    }
+
+    #inputArea {
+        margin-top: 12px;
+        display: flex;
+        gap: 10px;
+    }
+
+    #prompt, #apiKey {
+        flex: 1;
+        padding: 10px;
+        border-radius: 5px;
+        border: 1px solid #aaa;
+    }
+
+    button {
+        padding: 10px;
+        border: none;
+        background: #007bff;
+        border-radius: 5px;
+        color: white;
+        cursor: pointer;
+    }
+
+    #devPanel {
+        display: none;
+        background: white;
+        border: 1px solid #aaa;
+        padding: 10px;
+        border-radius: 8px;
+        margin-top: 15px;
+    }
+</style>
+</head>
+<body>
+
+<h2>💬 Minha IA</h2>
+
+<label>API KEY do Google:</label>
+<input id="apiKey" placeholder="Cole sua KEY aqui...">
+
+<div id="chatBox"></div>
+
+<div id="inputArea">
+    <input id="prompt" placeholder="Digite sua mensagem...">
+    <button id="sendBtn">Enviar</button>
+</div>
+
+<button id="devBtn">DEV</button>
+
+<div id="devPanel">
+    <label>Digite a senha:</label>
+    <input id="devPass" type="password">
+    <button id="backBtn">Voltar</button>
+
+    <div id="promptPanel" style="display:none;">
+        <h3>NEW PROMPT</h3>
+        <textarea id="systemPrompt" style="width:100%;height:150px;"></textarea>
+        <button id="savePromptBtn">Salvar</button>
+    </div>
+</div>
+
+<script>
+let systemPrompt = "Você é uma IA amigável.";
+
+/* Adicionar mensagem no chat */
+function addMessage(txt) {
+    const box = document.getElementById("chatBox");
+    box.innerHTML += "<div>" + txt + "</div><br>";
+    box.scrollTop = box.scrollHeight;
+}
+
+/* Botão enviar */
+document.getElementById("sendBtn").onclick = async () => {
+
+    const key = document.getElementById("apiKey").value.trim();
+    const prompt = document.getElementById("prompt").value.trim();
+
+    if (!key) return alert("AIzaSyAtUHP7nQpNYB1oB47FzZNWvARfmI-OF8Y");
+    if (!prompt) return alert("Digite algo!");
+
+    addMessage("<b>Você:</b> " + prompt);
+
+    const url =
+      "https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=" + key;
+
+    const body = {
+        contents: [
+            {
+                parts: [
+                    { text: systemPrompt + "\n\nUsuário: " + prompt }
+                ]
+            }
+        ]
+    };
+
+    try {
+        const res = await fetch(url, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify(body)
+        });
+
+        const json = await res.json();
+
+        const text =
+            json?.candidates?.[0]?.content?.parts?.[0]?.text ||
+            json?.candidates?.[0]?.text;
+
+        if (!text) {
+            addMessage("<b>Erro:</b> " + (json.error?.message || "Resposta inválida."));
+            return;
+        }
+
+        addMessage("<b>IA:</b> " + text);
+
+    } catch (e) {
+        addMessage("<b>Erro na API:</b> " + e.message);
+    }
+};
+
+/* DEV MENU */
+document.getElementById("devBtn").onclick = () => {
+    document.getElementById("devPanel").style.display = "block";
+};
+
+document.getElementById("backBtn").onclick = () => {
+    document.getElementById("devPanel").style.display = "none";
+};
+
+document.getElementById("devPass").oninput = () => {
+    if (document.getElementById("devPass").value === "404") {
+        document.getElementById("promptPanel").style.display = "block";
+    }
+};
+
+document.getElementById("savePromptBtn").onclick = () => {
+    systemPrompt = document.getElementById("systemPrompt").value.trim();
+    alert("Prompt atualizado!");
+    document.getElementById("devPanel").style.display = "none";
+};
+</script>
+
+</body>
+</html>
